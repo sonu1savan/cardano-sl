@@ -89,6 +89,7 @@ import           Pos.Wallet.Redirect (MonadBlockchainInfo (..), MonadUpdates (..
 import           Pos.Wallet.WalletMode (WalletMempoolExt)
 import           Pos.Wallet.Web.Account (AccountMode, GenSeed (RandomSeed))
 import           Pos.Wallet.Web.ClientTypes (AccountId)
+import           Pos.Wallet.Web.Error (WalletError (..))
 import           Pos.Wallet.Web.Methods.Logic (MonadWalletLogic, newAddress_)
 import           Pos.Wallet.Web.Sockets.Connection (MonadWalletWebSockets)
 import           Pos.Wallet.Web.Sockets.ConnSet (ConnectionsVar)
@@ -308,7 +309,11 @@ instance HasConfiguration => MonadBalances WalletWebMode where
     getOwnUtxos = getOwnUtxosDefault
     getBalance = getBalanceDefault
 
-instance (HasConfiguration, HasSscConfiguration, HasTxpConfiguration, HasCompileInfo)
+instance ( HasConfiguration
+         , HasSscConfiguration
+         , HasTxpConfiguration
+         , HasCompileInfo
+         )
         => MonadTxHistory WalletWebMode where
     getBlockHistory = getBlockHistoryDefault
     getLocalHistory = getLocalHistoryDefault
@@ -320,8 +325,10 @@ instance MonadFormatPeers WalletWebMode where
 
 type instance MempoolExt WalletWebMode = WalletMempoolExt
 
-instance (HasConfiguration, HasTxpConfiguration, HasCompileInfo) =>
-         MonadTxpLocal WalletWebMode where
+instance ( HasConfiguration
+         , HasTxpConfiguration
+         , HasCompileInfo
+         ) => MonadTxpLocal WalletWebMode where
     txpNormalize = txpNormalizeWebWallet
     txpProcessTx = txpProcessTxWebWallet
 
@@ -339,8 +346,9 @@ getNewAddressWebWallet (accId, passphrase) = do
     cAddrMeta <- newAddress_ ws RandomSeed passphrase accId
     return $ cAddrMeta ^. wamAddress
 
-instance (HasConfigurations, HasCompileInfo)
-      => MonadAddresses Pos.Wallet.Web.Mode.WalletWebMode where
+instance ( HasConfigurations
+         , HasCompileInfo
+         ) => MonadAddresses Pos.Wallet.Web.Mode.WalletWebMode where
     type AddrData Pos.Wallet.Web.Mode.WalletWebMode = (AccountId, PassPhrase)
     -- We rely on the fact that Daedalus always uses HD addresses with
     -- BootstrapEra distribution.

@@ -26,7 +26,7 @@ import           Pos.Txp (txpGlobalSettings)
 import           Pos.Util (logException)
 import           Pos.Util.CompileInfo (HasCompileInfo, retrieveCompileTimeInfo, withCompileInfo)
 import           Pos.Util.UserSecret (usVss)
-import           Pos.Wallet.Web (bracketWalletWS, bracketWalletWebDB, getSKById, getWalletAddresses,
+import           Pos.Wallet.Web (bracketWalletWS, bracketWalletWebDB, getKeyById, getWalletAddresses,
                                  runWRealMode)
 import           Pos.Wallet.Web.Mode (WalletWebMode)
 import           Pos.Wallet.Web.State (askWalletDB, askWalletSnapshot, flushWalletStorage)
@@ -71,6 +71,7 @@ actionWithWallet sscParams nodeParams ntpConfig wArgs@WalletBackendParams {..} =
                     runWRealMode db conn syncQueue nr (mainAction ntpStatus nr)
   where
     mainAction ntpStatus = runNodeWithInit ntpStatus $ do
+        putText "Wallet OLD, MAIN ACTION is starting..."
         when (walletFlushDb walletDbOptions) $ do
             logInfo "Flushing wallet db..."
             askWalletDB >>= flushWalletStorage
@@ -79,7 +80,9 @@ actionWithWallet sscParams nodeParams ntpConfig wArgs@WalletBackendParams {..} =
         -- NOTE(adn): Sync the wallets anyway. The old implementation was skipping syncing in
         -- case `walletFlushDb` was not set, but was still calling it before starting the Servant
         -- server.
+        putText "Wallet OLD, SYNC Wallets is starting..."
         syncWallets
+        putText "Wallet OLD, SYNC Wallets is done."
 
     runNodeWithInit ntpStatus init' nr =
         let (ActionSpec f, outs) = runNode nr (plugins ntpStatus)
@@ -88,8 +91,10 @@ actionWithWallet sscParams nodeParams ntpConfig wArgs@WalletBackendParams {..} =
     syncWallets :: WalletWebMode ()
     syncWallets = do
         addrs <- getWalletAddresses <$> askWalletSnapshot
-        sks <- mapM getSKById addrs
-        forM_ sks (syncWallet . eskToWalletDecrCredentials)
+        keys <- mapM getKeyById addrs
+        -- External wallets doesn't have secret keys here,
+        -- because their secret keys are stored externally.
+        forM_ keys (syncWallet . eskToWalletDecrCredentials)
 
     plugins :: (HasConfigurations, HasCompileInfo) => TVar NtpStatus -> Plugins.Plugin WalletWebMode
     plugins ntpStatus =
@@ -158,9 +163,9 @@ startEdgeNode WalletStartupOptions{..} =
   withConfigurations conf $ \ntpConfig -> do
       (sscParams, nodeParams) <- getParameters ntpConfig
       case wsoWalletBackendParams of
-        WalletLegacy legacyParams ->
+        WalletLegacy legacyParams -> do
           actionWithWallet sscParams nodeParams ntpConfig legacyParams
-        WalletNew newParams ->
+        WalletNew newParams -> do
           actionWithNewWallet sscParams nodeParams newParams
   where
     getParameters :: HasConfigurations => NtpConfiguration -> Production (SscParams, NodeParams)

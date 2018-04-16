@@ -38,7 +38,7 @@ import           Pos.Util (lensOf, logException)
 import           Pos.Util.CompileInfo (HasCompileInfo, retrieveCompileTimeInfo, withCompileInfo)
 import           Pos.Util.UserSecret (usVss)
 import           Pos.Wallet.Web (AddrCIdHashes (..), WalletWebMode, bracketWalletWS,
-                                 bracketWalletWebDB, getSKById, notifierPlugin, runWRealMode,
+                                 bracketWalletWebDB, getKeyById, notifierPlugin, runWRealMode,
                                  startPendingTxsResubmitter, walletServeWebFull, walletServerOuts)
 import           Pos.Wallet.Web.State (askWalletDB, askWalletSnapshot, cleanupAcidStatePeriodically,
                                        flushWalletStorage, getWalletAddresses)
@@ -98,8 +98,10 @@ actionWithWallet sscParams nodeParams ntpConfig wArgs@WalletArgs {..} = do
     syncWallets :: WalletWebMode ()
     syncWallets = do
         ws  <- askWalletSnapshot
-        sks <- mapM getSKById (getWalletAddresses ws)
-        forM_ sks (syncWallet . eskToWalletDecrCredentials)
+        keys <- mapM getKeyById (getWalletAddresses ws)
+        -- External wallets doesn't have secret keys here,
+        -- because their secret keys are stored externally.
+        forM_ keys (syncWallet . eskToWalletDecrCredentials)
     resubmitterPlugins = ([ActionSpec $ \diffusion -> askWalletDB >>=
                             \db -> startPendingTxsResubmitter db (sendTx diffusion)], mempty)
     notifierPlugins = ([ActionSpec $ \_ -> notifierPlugin], mempty)

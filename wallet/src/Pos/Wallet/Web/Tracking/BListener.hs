@@ -25,6 +25,7 @@ import           Pos.Core (HasConfiguration, HeaderHash, Timestamp, difficultyL,
                            prevBlockL)
 import           Pos.Core.Block (BlockHeader (..), blockHeader, getBlockHeader, mainBlockTxPayload)
 import           Pos.Core.Txp (TxAux (..), TxUndo)
+import           Pos.Crypto (HDPassphrase (..))
 import           Pos.DB.BatchOp (SomeBatchOp)
 import           Pos.DB.Class (MonadDBRead)
 import qualified Pos.GState as GS
@@ -37,8 +38,8 @@ import           Pos.Util.LogSafe (buildSafe, logInfoSP, logWarningSP, secretOnl
 import           Pos.Util.TimeLimit (CanLogInParallel, logWarningWaitInf)
 import           Pos.Wallet.Web.Tracking.Decrypt (eskToWalletDecrCredentials)
 
-import           Pos.Wallet.Web.Account (AccountMode, getSKById)
-import           Pos.Wallet.Web.ClientTypes (CId, Wal)
+import           Pos.Wallet.Web.Account (AccountMode, getKeyById)
+import           Pos.Wallet.Web.ClientTypes (CId (..), Wal, CHash (..))
 import qualified Pos.Wallet.Web.State as WS
 import           Pos.Wallet.Web.Tracking.Modifier (CAccModifier (..))
 import           Pos.Wallet.Web.Tracking.Sync (applyModifierToWallet, rollbackModifierFromWallet,
@@ -104,9 +105,9 @@ onApplyBlocksWebWallet blunds = setLogger . reportTimeouts "apply" $ do
         -> m ()
     syncWallet db ws curTip newTipH blkTxsWUndo wAddr = walletGuard ws curTip wAddr $ do
         blkHeaderTs <- blkHeaderTsGetter
-        encSK <- getSKById wAddr
-
-        let credentials = eskToWalletDecrCredentials encSK
+        -- key <- getKeyById wAddr
+        -- let credentials = eskToWalletDecrCredentials key
+        let credentials = (HDPassphrase "", CId (CHash ""))
         let dbUsed = WS.getCustomAddresses ws WS.UsedAddr
         let applyBlockWith trackingOp = do
               let mapModifier = trackingApplyTxs credentials dbUsed gbDiff blkHeaderTs ptxBlkInfo blkTxsWUndo
@@ -155,12 +156,13 @@ onRollbackBlocksWebWallet blunds = setLogger . reportTimeouts "rollback" $ do
         -> CId Wal
         -> m ()
     syncWallet db ws curTip newTip txs wid = walletGuard ws curTip wid $ do
-        encSK <- getSKById wid
+        -- key <- getKeyById wid
+        -- let credentials = eskToWalletDecrCredentials key
+        let credentials = (HDPassphrase "", CId (CHash ""))
         blkHeaderTs <- blkHeaderTsGetter
-
         let rollbackBlockWith trackingOperation = do
               let dbUsed = WS.getCustomAddresses ws WS.UsedAddr
-                  mapModifier = trackingRollbackTxs (eskToWalletDecrCredentials encSK) dbUsed gbDiff blkHeaderTs txs
+                  mapModifier = trackingRollbackTxs credentials dbUsed gbDiff blkHeaderTs txs
               rollbackModifierFromWallet db trackingOperation wid newTip mapModifier
               logMsg "Rolled back" (getNewestFirst blunds) wid mapModifier
 

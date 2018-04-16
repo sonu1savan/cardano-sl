@@ -384,9 +384,11 @@ instance HasConfigurations => MonadAddresses WalletTestMode where
 
 instance MonadKeysRead WalletTestMode where
     getSecret = getSecretDefault
+    getPublic = error "getPublic: No tests for external wallets."
 
 instance MonadKeys WalletTestMode where
     modifySecret = modifySecretPureDefault
+    modifyPublic = error "modifyPublic: No tests for external wallets."
 
 instance (HasCompileInfo, HasConfigurations) => MonadTxHistory WalletTestMode where
     getBlockHistory = getBlockHistoryDefault
