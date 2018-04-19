@@ -90,13 +90,16 @@ library
                      , aeson
                      , aeson-pretty
                      , bytestring
+                     , connection
                      , containers
                      , data-default
+                     , data-default-class
                      , exceptions
                      , formatting
                      , generics-sop
                      , http-api-data
                      , http-client
+                     , http-client-tls
                      , http-types
                      , json-sop
                      , ixset-typed
@@ -121,12 +124,15 @@ library
                      , time-units
                      , text
                      , text-format
+                     , tls
                      , transformers
                      , reflection
                      , universum
                      , unordered-containers
                      , vector
                      , serokell-util
+                     , x509
+                     , x509-store
                      , wai
                      , cardano-sl-block
                      , cardano-sl-core
@@ -319,6 +325,8 @@ executable cardano-integration-test
                      , time-units
                      , universum
                      , unordered-containers
+                     , x509
+                     , x509-store
                      , wai
                      , wai-cors
                      , wai-extra
