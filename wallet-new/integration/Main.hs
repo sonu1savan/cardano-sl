@@ -60,6 +60,7 @@ main = do
     -- Acquire the initial state for the deterministic tests
     wRef <- newWalletRef
 
+    printT "Starting deterministic tests."
     hspec $ deterministicTests wRef walletClient
   where
     actionDistribution :: ActionProbabilities
