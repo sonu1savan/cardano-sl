@@ -47,6 +47,36 @@ transactionSpecs wRef wc = do
 
             map txId resp `shouldContain` [txId txn]
 
+        it "blacklist transactions do not appear in the index" $ do
+            genesis <- genesisBlacklistWallet wc
+            (fromAcct, _) <- firstAccountAndId wc genesis
+
+            wallet <- sampleWallet wRef wc
+            (toAcct, toAddr) <- firstAccountAndId wc wallet
+
+            let payment = Payment
+                    { pmtSource =  PaymentSource
+                        { psWalletId = walId genesis
+                        , psAccountIndex = accIndex fromAcct
+                        }
+                    , pmtDestinations = pure PaymentDistribution
+                        { pdAddress = addrId toAddr
+                        , pdAmount = halfOf (accAmount fromAcct)
+                        }
+                    , pmtGroupingPolicy = Nothing
+                    , pmtSpendingPassword = Nothing
+                    }
+                halfOf (V1 c) = V1 (Core.mkCoin (Core.getCoin c `div` 2))
+
+            etxn <- postTransaction wc payment
+
+            txn <- fmap wrData etxn `shouldPrism` _Right
+
+            eresp <- getTransactionIndex wc (Just (walId wallet)) (Just (accIndex toAcct)) Nothing
+            resp <- fmap wrData eresp `shouldPrism` _Right
+
+            map txId resp `shouldContain` [txId txn]
+
         it "estimate fees of a well-formed transaction" $ do
             ws <- (,)
                 <$> (randomCreateWallet >>= createWalletCheck wc)

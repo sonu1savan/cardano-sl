@@ -16,8 +16,8 @@ import           Data.Aeson.Diff (diff)
 import           Data.Aeson.Encode.Pretty (encodePretty)
 import           Data.Coerce (coerce)
 import           Data.List (isInfixOf, nub, (!!), (\\))
-import           Test.Hspec
-import           Test.QuickCheck
+import           Test.Hspec (expectationFailure, shouldContain, shouldBe, hspec, describe, it)
+import           Test.QuickCheck (Gen, elements, generate, frequency, choose, arbitrary, suchThat)
 import           Text.Show.Pretty (ppShow)
 
 import           Cardano.Wallet.API.Response (WalletResponse (..))
@@ -38,8 +38,8 @@ import           Cardano.Wallet.Client (ClientError (..), Response (..), Servant
 import           Pos.Core (getCoin, mkCoin, unsafeAddCoin, unsafeSubCoin)
 import qualified Pos.Wallet.Web.ClientTypes.Types as V0
 
-import           Error
-import           Types
+import           Error ( WalletTestError(..), showConstr )
+import           Types (WalletState, ActionProbabilities, WalletTestMode, wallets, getWeight, lastAction, successActions, transactions, addresses, walletsPass, accounts, nonGenesisWallets, actionsNum, Action (..))
 
 newtype RefT s m a
     = RefT
@@ -609,20 +609,6 @@ runAction wc action = do
                 (LocalTransactionMissing transaction result)
 
         NoOp  -> pure ()
-
-    lastAction .= action
-
-    -- Let's print it out to JSON
-    walletState <- get
-
-    log "=================================================================="
-    log . decodeUtf8 . encodePretty $ diff (toJSON previousWalletState) (toJSON walletState)
-    log "=================================================================="
-
-    -- increment successful actions
-    log "Success!"
-    successActions <>= [action]
-
 
 -----------------------------------------------------------------------------
 -- Helpers
