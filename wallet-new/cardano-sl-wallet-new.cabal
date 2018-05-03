@@ -111,7 +111,6 @@ library
                      , unliftio-core
                      , safecopy
                      , safe-exceptions
-                     , scientific
                      , servant
                      , servant-client
                      , servant-client-core
