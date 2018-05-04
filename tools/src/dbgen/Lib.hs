@@ -60,7 +60,7 @@ _exampleSpec = GenSpec
         { accounts = 1
         , accountSpec = AccountSpec { addresses = 100 }
         , fakeUtxoCoinDistr = RangeDistribution { amount = 1000, range = 100 }
-        , fakeTxsHistory = SimpleTxsHistory { txsCount = 100, numOutgoingAddress = 3 }
+        , fakeTxsHistory = SimpleTxsHistory (TxsCount 100) (NumOutgoingAddresses 3)
         }
     , wallets = 1
     }
@@ -136,15 +136,24 @@ type NumberOfBatches = Int
 
 -- TODO(ks): As with @FakeUtxoCoinDistribution@, we may have different strategies
 -- to generate @FakeTxsHistory@.
+
+newtype TxsCount             = TxsCount Integer deriving (Show, Eq, Generic)
+
+instance ToJSON TxsCount
+
+newtype NumOutgoingAddresses = NumOutgoingAddresses NumOfOutgoingAddresses deriving (Show, Eq, Generic)
+
+instance ToJSON NumOutgoingAddresses
+
 data FakeTxsHistory
     = NoHistory
     -- ^ Do not generate fake history.
     | SimpleTxsHistory
-        { txsCount           :: !Integer
+        TxsCount
         -- ^ Number of txs we want to generate.
-        , numOutgoingAddress :: !NumOfOutgoingAddresses
+        NumOutgoingAddresses
         -- ^ Number of outgoing addreses of a single @Tx@.
-        }
+
     -- ^ Simple tx history generation.
     -- TODO(ks): For now KISS, we can add more generation strategies.
     deriving (Show, Eq, Generic)
@@ -152,9 +161,10 @@ data FakeTxsHistory
 instance FromJSON FakeTxsHistory where
     parseJSON = withObject "HistoryGeneration" $ \o -> do
         distrType <- o .: "type"
+        let arrange a b = SimpleTxsHistory (TxsCount a) (NumOutgoingAddresses b)
         case distrType of
           "none"   -> pure NoHistory
-          "simple" -> SimpleTxsHistory <$> o .: "txsCount" <*> o .: "numOutgoingAddress"
+          "simple" -> liftA2 arrange (o .: "txsCount") (o .: "numOutgoingAddress")
           _        -> fail ("Unknown type: " ++ distrType)
 
 instance ToJSON FakeTxsHistory
@@ -231,8 +241,10 @@ generateWalletDB CLI{..} spec@GenSpec{..} = do
 
 -- | Here we generate fake txs. For now it's a simple arbitrary generation.
 generateFakeTxs :: FakeTxsHistory -> AccountId -> UberMonad ()
-generateFakeTxs NoHistory _                = pure ()
-generateFakeTxs SimpleTxsHistory{..} aId   = do
+generateFakeTxs NoHistory _                       = pure ()
+generateFakeTxs (SimpleTxsHistory (TxsCount txsCount)
+    (NumOutgoingAddresses numOutgoingAddress)) aId = do
+
     -- Get the number of txs we need to generate.
     let txsNumber = fromIntegral txsCount
 
