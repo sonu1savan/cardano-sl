@@ -3,6 +3,8 @@
 
 module KeygenOptions
        ( KeygenOptions (..)
+       , DgdPath (..)
+       , DgdCanonical (..)
        , KeygenCommand (..)
        , DumpAvvmSeedsOptions (..)
        , TestnetBalanceOptions (..)
@@ -29,6 +31,10 @@ data KeygenOptions = KeygenOptions
     , koConfigurationOptions :: ConfigurationOptions
     } deriving (Show)
 
+newtype DgdPath      = DgdPath FilePath deriving (Show)
+
+newtype DgdCanonical = DgdCanonical Bool deriving (Show)
+
 data KeygenCommand
     = RearrangeMask FilePath
     | GenerateKey FilePath
@@ -36,8 +42,7 @@ data KeygenCommand
     | ReadKey FilePath
     | DumpAvvmSeeds DumpAvvmSeedsOptions
     | GenerateKeysBySpec GenKeysOptions
-    | DumpGenesisData { dgdPath      :: !FilePath
-                      , dgdCanonical :: !Bool }
+    | DumpGenesisData DgdPath DgdCanonical
     deriving (Show)
 
 data DumpAvvmSeedsOptions = DumpAvvmSeedsOptions
@@ -100,7 +105,7 @@ keygenCommandParser =
         dgdCanonical <- switch $
             long "canonical" <>
             help "Whether genesis data should be in canonical json"
-        pure DumpGenesisData {..}
+        pure $ DumpGenesisData (DgdPath dgdPath) (DgdCanonical dgdCanonical)
 
 dumpAvvmSeedsParser :: Parser DumpAvvmSeedsOptions
 dumpAvvmSeedsParser = do

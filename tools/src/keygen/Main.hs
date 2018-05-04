@@ -29,8 +29,8 @@ import           Pos.Util.UserSecret (readUserSecret, takeUserSecret, usKeys, us
                                       usWallet, writeUserSecretRelease, wusRootKey)
 
 import           Dump (dumpFakeAvvmSeed, dumpGeneratedGenesisData, dumpRichSecrets)
-import           KeygenOptions (DumpAvvmSeedsOptions (..), GenKeysOptions (..), KeygenCommand (..),
-                                KeygenOptions (..), getKeygenOptions)
+import           KeygenOptions (DumpAvvmSeedsOptions (..), GenKeysOptions (..), DgdPath (..),
+                                DgdCanonical (..), KeygenCommand (..), KeygenOptions (..), getKeygenOptions)
 
 ----------------------------------------------------------------------------
 -- Helpers
@@ -162,4 +162,5 @@ main = do
             ReadKey path            -> readKey path
             DumpAvvmSeeds opts      -> dumpAvvmSeeds opts
             GenerateKeysBySpec gkbg -> generateKeysByGenesis gkbg
-            DumpGenesisData {..}    -> CLI.dumpGenesisData dgdCanonical dgdPath
+            DumpGenesisData (DgdPath dgdPath) (DgdCanonical dgdCanonical)
+                                    -> CLI.dumpGenesisData dgdCanonical dgdPath
