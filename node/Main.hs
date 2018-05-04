@@ -62,6 +62,6 @@ main = withCompileInfo $(retrieveCompileTimeInfo) $ do
     args@(CLI.SimpleNodeArgs commonNodeArgs _) <- CLI.getSimpleNodeOptions
     let loggingParams = CLI.loggingParams loggerName commonNodeArgs
     let conf = CLI.configurationOptions (CLI.commonArgs commonNodeArgs)
-        blPath = BlacklistPath <$> cnaBlacklistPath commonNodeArgs
+    let blPath = BlacklistPath <$> cnaBlacklistPath commonNodeArgs
     loggerBracket loggingParams . logException "node" . runProduction $
         withConfigurations blPath conf $ action args
