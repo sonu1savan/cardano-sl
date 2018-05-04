@@ -120,6 +120,7 @@ library
                      , servant-server
                      , servant-swagger-ui
                      , sqlite-simple
+                     , sqlite-simple-errors
                      , stm
                      , string-conv
                      , swagger2
@@ -418,6 +419,7 @@ test-suite wallet-unit-tests
                     , directory
                     , formatting
                     , hspec
+                    , HUnit
                     , lens
                     , log-warper
                     , mmorph
